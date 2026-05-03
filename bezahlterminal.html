@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultra Fake Payment Terminal - Sound Edition</title>
+<title>Ultra Fake Payment Terminal - ApplePay Edition</title>
 
 <style>
 body{
@@ -191,23 +191,26 @@ button:hover{background:#4b5563;}
     <div class="card" id="card"></div>
 </div>
 
-<audio id="soundInsert" src="insert.mp3" preload="auto"></audio>
-<audio id="soundSuccess" src="success.mp3" preload="auto"></audio>
+<!-- Apple Pay Sound Element -->
+<audio id="applePaySound" src="applepay.mp3" preload="auto"></audio>
 
+<!-- RECEIPT -->
 <div class="receipt" id="receipt">
     <h3>🧾 Kassenbon</h3>
     <p id="recText" style="white-space: pre-line;"></p>
     <p class="small">Danke für den Fake-Kauf 😄</p>
-    <button onclick="closeReceipt()" style="background: #1f2937; width: 100%; height: 40px; margin-top: 10px;">Schließen</button>
+    <button onclick="closeReceipt()" style="background: #1f2937; color: white; border: none; width: 100%; height: 40px; margin-top: 10px; border-radius: 5px; cursor: pointer;">Schließen</button>
 </div>
 
+<!-- ADMIN -->
 <div class="admin" id="admin">
     <h4>⚙️ Admin</h4>
-    <button onclick="resetAll()">Reset</button>
+    <button onclick="resetAll()" style="cursor: pointer;">Reset</button>
 </div>
 
 <script>
 let value = "";
+const sound = document.getElementById("applePaySound");
 
 function update(){
     document.getElementById("amount").innerText =
@@ -234,12 +237,14 @@ function clearV(){
     document.getElementById("status").innerText = "Betrag eingeben...";
 }
 
+function playSound() {
+    sound.currentTime = 0; // Sound zurücksetzen falls er noch spielt
+    sound.play().catch(e => console.log("Audio konnte nicht geladen werden:", e));
+}
+
 /* CARD PAY */
 function payCard(){
     if(!value) return;
-
-    // Sound abspielen: Karte eingesteckt
-    try { document.getElementById("soundInsert").play(); } catch(e) {}
 
     document.getElementById("status").innerText="Karte wird gelesen...";
     let card = document.getElementById("card");
@@ -247,8 +252,9 @@ function payCard(){
 
     setTimeout(()=>{
         card.classList.remove("active");
+        playSound(); // Sound bei Erfolg abspielen
         success();
-    }, 2200);
+    }, 2000);
 }
 
 /* NFC PAY */
@@ -259,18 +265,15 @@ function payNFC(){
     let nfc = document.getElementById("nfc");
     nfc.classList.add("active");
 
-    // Kleiner Delay bis zum Erfolg wie im echten Leben
     setTimeout(()=>{
         nfc.classList.remove("active");
+        playSound(); // Sound bei Erfolg abspielen
         success();
-    }, 1500);
+    }, 1200);
 }
 
 /* SUCCESS + RECEIPT */
 function success(){
-    // Sound abspielen: Zahlung erfolgreich (Piep)
-    try { document.getElementById("soundSuccess").play(); } catch(e) {}
-
     document.getElementById("status").innerText="Zahlung erfolgreich ✅";
 
     document.getElementById("recText").innerText =
@@ -278,7 +281,7 @@ function success(){
 
     setTimeout(() => {
         document.getElementById("receipt").style.display="block";
-    }, 600);
+    }, 400);
 }
 
 function closeReceipt(){
