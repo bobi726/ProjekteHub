@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultra Fake Payment Terminal</title>
+<title>Ultra Fake Payment Terminal - Sound Edition</title>
 
 <style>
 body{
@@ -13,7 +13,7 @@ body{
     justify-content:center;
     align-items:center;
     background:#0b1220;
-    font-family:Arial;
+    font-family:Arial, sans-serif;
     color:white;
 }
 
@@ -43,6 +43,7 @@ body{
 .status{
     margin-top:10px;
     color:#94a3b8;
+    min-height: 1.2em;
 }
 
 /* BUTTONS */
@@ -61,6 +62,7 @@ button{
     background:#374151;
     color:white;
     cursor:pointer;
+    transition: background 0.2s;
 }
 
 button:hover{background:#4b5563;}
@@ -69,6 +71,7 @@ button:hover{background:#4b5563;}
     grid-column:span 3;
     background:#22c55e;
     font-weight:bold;
+    margin-top: 5px;
 }
 
 .pay:hover{background:#16a34a;}
@@ -84,6 +87,7 @@ button:hover{background:#4b5563;}
     border-radius:50%;
     border:2px solid #22c55e;
     opacity:0;
+    pointer-events: none;
 }
 
 .nfc.active{
@@ -105,8 +109,9 @@ button:hover{background:#4b5563;}
     height:120px;
     background:#3b82f6;
     border-radius:15px;
-    transition:1s;
+    transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     opacity:0;
+    z-index: 10;
 }
 
 .card.active{
@@ -126,14 +131,17 @@ button:hover{background:#4b5563;}
     padding:20px;
     border-radius:10px;
     display:none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 100;
 }
 
 .receipt h3{
-    margin:0;
+    margin:0 0 10px 0;
 }
 
 .small{
     font-size:12px;
+    color: #666;
 }
 
 /* ADMIN PANEL */
@@ -152,11 +160,10 @@ button:hover{background:#4b5563;}
 <body>
 
 <div class="terminal" id="terminal">
-
     <div class="screen">
         <div>Betrag</div>
         <div class="amount" id="amount">0€</div>
-        <div class="status" id="status">Eingabe starten</div>
+        <div class="status" id="status">Betrag eingeben...</div>
     </div>
 
     <div class="buttons">
@@ -184,29 +191,34 @@ button:hover{background:#4b5563;}
     <div class="card" id="card"></div>
 </div>
 
-<!-- RECEIPT -->
+<audio id="soundInsert" src="insert.mp3" preload="auto"></audio>
+<audio id="soundSuccess" src="success.mp3" preload="auto"></audio>
+
 <div class="receipt" id="receipt">
     <h3>🧾 Kassenbon</h3>
-    <p id="recText"></p>
+    <p id="recText" style="white-space: pre-line;"></p>
     <p class="small">Danke für den Fake-Kauf 😄</p>
-    <button onclick="closeReceipt()">Schließen</button>
+    <button onclick="closeReceipt()" style="background: #1f2937; width: 100%; height: 40px; margin-top: 10px;">Schließen</button>
 </div>
 
-<!-- ADMIN -->
 <div class="admin" id="admin">
     <h4>⚙️ Admin</h4>
     <button onclick="resetAll()">Reset</button>
 </div>
 
 <script>
-let value="";
+let value = "";
 
 function update(){
     document.getElementById("amount").innerText =
     value === "" ? "0€" : value + "€";
 }
 
-function add(n){ value += n; update(); }
+function add(n){ 
+    value += n; 
+    update(); 
+    document.getElementById("status").innerText = "Bereit zum Zahlen";
+}
 
 function dot(){
     if(!value.includes(",")){
@@ -216,11 +228,18 @@ function dot(){
     }
 }
 
-function clearV(){ value=""; update(); }
+function clearV(){ 
+    value=""; 
+    update(); 
+    document.getElementById("status").innerText = "Betrag eingeben...";
+}
 
 /* CARD PAY */
 function payCard(){
     if(!value) return;
+
+    // Sound abspielen: Karte eingesteckt
+    try { document.getElementById("soundInsert").play(); } catch(e) {}
 
     document.getElementById("status").innerText="Karte wird gelesen...";
     let card = document.getElementById("card");
@@ -229,7 +248,7 @@ function payCard(){
     setTimeout(()=>{
         card.classList.remove("active");
         success();
-    },2000);
+    }, 2200);
 }
 
 /* NFC PAY */
@@ -240,24 +259,33 @@ function payNFC(){
     let nfc = document.getElementById("nfc");
     nfc.classList.add("active");
 
+    // Kleiner Delay bis zum Erfolg wie im echten Leben
     setTimeout(()=>{
         nfc.classList.remove("active");
         success();
-    },2000);
+    }, 1500);
 }
 
 /* SUCCESS + RECEIPT */
 function success(){
+    // Sound abspielen: Zahlung erfolgreich (Piep)
+    try { document.getElementById("soundSuccess").play(); } catch(e) {}
+
     document.getElementById("status").innerText="Zahlung erfolgreich ✅";
 
     document.getElementById("recText").innerText =
-    "Betrag: " + value + "€\nStatus: OK\nTerminal: #A1";
+    "Betrag: " + value + "€\nDatum: " + new Date().toLocaleDateString() + "\nStatus: OK\nTerminal: #A1-SKIPI";
 
-    document.getElementById("receipt").style.display="block";
+    setTimeout(() => {
+        document.getElementById("receipt").style.display="block";
+    }, 600);
 }
 
 function closeReceipt(){
     document.getElementById("receipt").style.display="none";
+    value = "";
+    update();
+    document.getElementById("status").innerText = "Nächster Kunde...";
 }
 
 /* ADMIN */
@@ -271,6 +299,8 @@ document.addEventListener("keydown",(e)=>{
 function resetAll(){
     value="";
     update();
+    document.getElementById("receipt").style.display="none";
+    document.getElementById("status").innerText = "Eingabe starten";
 }
 </script>
 
