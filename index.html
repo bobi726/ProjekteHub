@@ -3,155 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tischtennis Punkte Zähler</title>
+<title>Projekt Hub</title>
 
 <style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: linear-gradient(135deg, #1e1e2f, #2d2d44);
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0b1220;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
 
-    .container {
-        background: rgba(255,255,255,0.08);
-        backdrop-filter: blur(10px);
-        padding: 40px;
-        border-radius: 25px;
-        text-align: center;
-        width: 400px;
-        box-shadow: 0 0 25px rgba(0,0,0,0.4);
-    }
+.container{
+    width:90%;
+    max-width:500px;
+    text-align:center;
+}
 
-    h1 {
-        margin-bottom: 30px;
-        font-size: 32px;
-    }
+h1{
+    margin-bottom:10px;
+}
 
-    .score {
-        font-size: 80px;
-        font-weight: bold;
-        margin: 30px 0;
-    }
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:20px;
+}
 
-    .buttons {
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-    }
+a{
+    display:block;
+    padding:18px;
+    background:#1f2937;
+    border-radius:12px;
+    text-decoration:none;
+    color:white;
+    transition:0.2s;
+}
 
-    button {
-        border: none;
-        border-radius: 15px;
-        padding: 18px 25px;
-        font-size: 20px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: 0.2s;
-    }
+a:hover{
+    background:#374151;
+    transform:scale(1.05);
+}
 
-    .p1 {
-        background: #ff8c42;
-        color: white;
-    }
-
-    .p2 {
-        background: #4da6ff;
-        color: white;
-    }
-
-    .reset {
-        margin-top: 20px;
-        background: #ff4d4d;
-        color: white;
-        width: 100%;
-    }
-
-    button:hover {
-        transform: scale(1.05);
-        opacity: 0.9;
-    }
-
-    .winner {
-        margin-top: 20px;
-        font-size: 28px;
-        color: #7dff9b;
-        font-weight: bold;
-    }
+small{
+    color:#94a3b8;
+}
 </style>
+
 </head>
 <body>
 
 <div class="container">
-    <h1>🏓 Tischtennis Punkte Zähler</h1>
+    <h1>🐳 Projekt Hub</h1>
+    <small>Lädt Dateien automatisch aus GitHub...</small>
 
-    <div class="score" id="score">
-        0 : 0
-    </div>
-
-    <div class="buttons">
-        <button class="p1" onclick="addPoint(1)">
-            Spieler 1 +
-        </button>
-
-        <button class="p2" onclick="addPoint(2)">
-            Spieler 2 +
-        </button>
-    </div>
-
-    <button class="reset" onclick="resetGame()">
-        🔄 Reset
-    </button>
-
-    <div class="winner" id="winner"></div>
+    <div class="grid" id="list"></div>
 </div>
 
 <script>
-    let p1 = 0;
-    let p2 = 0;
+const user = "bobi726";
+const repo = "ProjekteHub";
 
-    function addPoint(player) {
-        if (player === 1) {
-            p1++;
-        } else {
-            p2++;
-        }
+const api = `https://api.github.com/repos/${user}/${repo}/contents/`;
 
-        updateScore();
-        checkWinner();
+async function loadFiles(){
+    try {
+        const res = await fetch(api);
+        const data = await res.json();
+
+        const list = document.getElementById("list");
+
+        data.forEach(file => {
+            if(file.name.endsWith(".html") && file.name !== "index.html"){
+
+                const a = document.createElement("a");
+                a.href = file.name;
+                a.innerText = "📄 " + file.name.replace(".html","");
+                list.appendChild(a);
+            }
+        });
+
+    } catch (e){
+        document.getElementById("list").innerHTML =
+        "<p>❌ Fehler beim Laden der Dateien</p>";
     }
+}
 
-    function updateScore() {
-        document.getElementById("score").innerText =
-            `${p1} : ${p2}`;
-    }
-
-    function checkWinner() {
-        const winnerText = document.getElementById("winner");
-
-        if (p1 >= 11 && p1 - p2 >= 2) {
-            winnerText.innerText = "🏆 Spieler 1 gewinnt!";
-        }
-        else if (p2 >= 11 && p2 - p1 >= 2) {
-            winnerText.innerText = "🏆 Spieler 2 gewinnt!";
-        }
-        else {
-            winnerText.innerText = "";
-        }
-    }
-
-    function resetGame() {
-        p1 = 0;
-        p2 = 0;
-
-        updateScore();
-
-        document.getElementById("winner").innerText = "";
-    }
+loadFiles();
 </script>
 
 </body>
