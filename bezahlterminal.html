@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultra Fake Payment Terminal - ApplePay Edition</title>
+<title>Ultra Fake Payment Terminal</title>
 
 <style>
 body{
@@ -15,6 +15,7 @@ body{
     background:#0b1220;
     font-family:Arial, sans-serif;
     color:white;
+    overflow: hidden;
 }
 
 /* TERMINAL */
@@ -43,7 +44,7 @@ body{
 .status{
     margin-top:10px;
     color:#94a3b8;
-    min-height: 1.2em;
+    height: 1.2em;
 }
 
 /* BUTTONS */
@@ -62,10 +63,10 @@ button{
     background:#374151;
     color:white;
     cursor:pointer;
-    transition: background 0.2s;
+    user-select: none;
 }
 
-button:hover{background:#4b5563;}
+button:active{background:#4b5563; transform: scale(0.95);}
 
 .pay{
     grid-column:span 3;
@@ -99,7 +100,7 @@ button:hover{background:#4b5563;}
     100%{transform:translate(-50%,-50%) scale(2.5); opacity:0;}
 }
 
-/* CARD ANIMATION */
+/* CARD */
 .card{
     position:absolute;
     bottom:-120px;
@@ -109,9 +110,8 @@ button:hover{background:#4b5563;}
     height:120px;
     background:#3b82f6;
     border-radius:15px;
-    transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: 0.8s ease-in-out;
     opacity:0;
-    z-index: 10;
 }
 
 .card.active{
@@ -135,16 +135,7 @@ button:hover{background:#4b5563;}
     z-index: 100;
 }
 
-.receipt h3{
-    margin:0 0 10px 0;
-}
-
-.small{
-    font-size:12px;
-    color: #666;
-}
-
-/* ADMIN PANEL */
+/* ADMIN */
 .admin{
     position:fixed;
     right:20px;
@@ -159,26 +150,23 @@ button:hover{background:#4b5563;}
 
 <body>
 
-<div class="terminal" id="terminal">
+<div class="terminal">
     <div class="screen">
         <div>Betrag</div>
         <div class="amount" id="amount">0€</div>
-        <div class="status" id="status">Betrag eingeben...</div>
+        <div class="status" id="status">Bereit</div>
     </div>
 
     <div class="buttons">
         <button onclick="add(1)">1</button>
         <button onclick="add(2)">2</button>
         <button onclick="add(3)">3</button>
-
         <button onclick="add(4)">4</button>
         <button onclick="add(5)">5</button>
         <button onclick="add(6)">6</button>
-
         <button onclick="add(7)">7</button>
         <button onclick="add(8)">8</button>
         <button onclick="add(9)">9</button>
-
         <button onclick="clearV()">C</button>
         <button onclick="add(0)">0</button>
         <button onclick="dot()">,</button>
@@ -191,36 +179,36 @@ button:hover{background:#4b5563;}
     <div class="card" id="card"></div>
 </div>
 
-<!-- Apple Pay Sound Element -->
+<!-- Der Sound -->
 <audio id="applePaySound" src="applepay.mp3" preload="auto"></audio>
 
-<!-- RECEIPT -->
 <div class="receipt" id="receipt">
     <h3>🧾 Kassenbon</h3>
-    <p id="recText" style="white-space: pre-line;"></p>
-    <p class="small">Danke für den Fake-Kauf 😄</p>
-    <button onclick="closeReceipt()" style="background: #1f2937; color: white; border: none; width: 100%; height: 40px; margin-top: 10px; border-radius: 5px; cursor: pointer;">Schließen</button>
+    <p id="recText"></p>
+    <button onclick="closeReceipt()" style="width:100%; padding:10px; cursor:pointer;">OK</button>
 </div>
 
-<!-- ADMIN -->
 <div class="admin" id="admin">
-    <h4>⚙️ Admin</h4>
-    <button onclick="resetAll()" style="cursor: pointer;">Reset</button>
+    <button onclick="resetAll()">Reset</button>
 </div>
 
 <script>
 let value = "";
-const sound = document.getElementById("applePaySound");
+const appleSound = document.getElementById("applePaySound");
 
 function update(){
-    document.getElementById("amount").innerText =
-    value === "" ? "0€" : value + "€";
+    document.getElementById("amount").innerText = value === "" ? "0€" : value + "€";
 }
 
 function add(n){ 
+    // Trick: Sound kurz "anspielen" und sofort pausieren, damit der Browser ihn freigibt
+    appleSound.play().then(() => {
+        appleSound.pause();
+        appleSound.currentTime = 0;
+    }).catch(() => {});
+
     value += n; 
     update(); 
-    document.getElementById("status").innerText = "Bereit zum Zahlen";
 }
 
 function dot(){
@@ -231,80 +219,56 @@ function dot(){
     }
 }
 
-function clearV(){ 
-    value=""; 
-    update(); 
-    document.getElementById("status").innerText = "Betrag eingeben...";
+function clearV(){ value=""; update(); }
+
+function playApplePay() {
+    appleSound.currentTime = 0;
+    appleSound.play().catch(err => console.error("Sound-Fehler:", err));
 }
 
-function playSound() {
-    sound.currentTime = 0; // Sound zurücksetzen falls er noch spielt
-    sound.play().catch(e => console.log("Audio konnte nicht geladen werden:", e));
-}
-
-/* CARD PAY */
 function payCard(){
     if(!value) return;
-
-    document.getElementById("status").innerText="Karte wird gelesen...";
-    let card = document.getElementById("card");
-    card.classList.add("active");
-
+    document.getElementById("status").innerText="Bitte warten...";
+    document.getElementById("card").classList.add("active");
     setTimeout(()=>{
-        card.classList.remove("active");
-        playSound(); // Sound bei Erfolg abspielen
-        success();
+        document.getElementById("card").classList.remove("active");
+        playApplePay();
+        showSuccess();
     }, 2000);
 }
 
-/* NFC PAY */
 function payNFC(){
     if(!value) return;
-
-    document.getElementById("status").innerText="Kontaktlos bezahlen...";
-    let nfc = document.getElementById("nfc");
-    nfc.classList.add("active");
-
+    document.getElementById("status").innerText="Sende Daten...";
+    document.getElementById("nfc").classList.add("active");
     setTimeout(()=>{
-        nfc.classList.remove("active");
-        playSound(); // Sound bei Erfolg abspielen
-        success();
+        document.getElementById("nfc").classList.remove("active");
+        playApplePay();
+        showSuccess();
     }, 1200);
 }
 
-/* SUCCESS + RECEIPT */
-function success(){
-    document.getElementById("status").innerText="Zahlung erfolgreich ✅";
-
-    document.getElementById("recText").innerText =
-    "Betrag: " + value + "€\nDatum: " + new Date().toLocaleDateString() + "\nStatus: OK\nTerminal: #A1-SKIPI";
-
+function showSuccess(){
+    document.getElementById("status").innerText="Zahlung erfolgt!";
+    document.getElementById("recText").innerText = "Betrag: " + value + "€\nTerminal: #001";
     setTimeout(() => {
         document.getElementById("receipt").style.display="block";
-    }, 400);
+    }, 500);
 }
 
 function closeReceipt(){
     document.getElementById("receipt").style.display="none";
     value = "";
     update();
-    document.getElementById("status").innerText = "Nächster Kunde...";
+    document.getElementById("status").innerText = "Bereit";
 }
 
-/* ADMIN */
 document.addEventListener("keydown",(e)=>{
     if(e.key==="F2"){
         let a=document.getElementById("admin");
         a.style.display = a.style.display==="block"?"none":"block";
     }
 });
-
-function resetAll(){
-    value="";
-    update();
-    document.getElementById("receipt").style.display="none";
-    document.getElementById("status").innerText = "Eingabe starten";
-}
 </script>
 
 </body>
